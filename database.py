@@ -168,8 +168,24 @@ def get_leaderboard_data(category):
 	"""Get leaderboard data for a specific category"""
 	conn = get_connection()
 	cursor = conn.cursor()
-	
-	if category == "overall":
+	if category == "puzzle_rush":
+		conn = sqlite3.connect('chess_leaderboard.db')
+		cursor = conn.cursor()
+		
+		# Fetch puzzle rush scores
+		cursor.execute('''
+		SELECT u.discord_id, u.chess_username, r.puzzle_rush_score
+		FROM users u
+		JOIN (
+			SELECT discord_id, MAX(last_updated) as max_date
+			FROM ratings
+			GROUP BY discord_id
+		) latest ON u.discord_id = latest.discord_id
+		JOIN ratings r ON latest.discord_id = r.discord_id AND latest.max_date = r.last_updated
+		WHERE r.puzzle_rush_score IS NOT NULL
+		ORDER BY r.puzzle_rush_score DESC
+		''')
+	elif category == "overall":
 		cursor.execute('''
 		SELECT u.discord_id, u.chess_username,
 		   	r.rapid_rating, r.blitz_rating, r.bullet_rating, r.puzzle_rating

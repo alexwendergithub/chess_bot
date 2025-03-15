@@ -49,6 +49,7 @@ def register_commands(bot):
 		app_commands.Choice(name="Blitz", value="blitz"),
 		app_commands.Choice(name="Bullet", value="bullet"),
 		app_commands.Choice(name="Puzzle", value="puzzle"),
+		app_commands.Choice(name="Puzzle Rush", value="puzzle_rush"),
 		app_commands.Choice(name="Overall", value="overall")
 	])
 	async def leaderboard(interaction: discord.Interaction, category: app_commands.Choice[str]):
@@ -56,18 +57,48 @@ def register_commands(bot):
 		 
 		category_value = category.value
 		users = get_leaderboard_data(category_value)
-		 
-		if category_value == "overall":
+		if category_value == "puzzle_rush":
+
+			# Create embed
+			embed = discord.Embed(
+				title="Chess.com Puzzle Rush Leaderboard",
+				description="Top puzzle rush survival scores",
+				color=0x00BFFF,
+				timestamp=datetime.datetime.now()
+			)
+			
+			# Add trophy emoji for top 3
+			trophies = ["🏆", "🥈", "🥉"]
+			
+			for index, user in enumerate(users, start=1):
+				discord_id, chess_username, score = user
+				
+				# Add trophy emoji for top 3
+				prefix = f"{trophies[index-1]} " if index <= 3 else f"{index}. "
+				
+				embed.add_field(
+					name=f"{prefix}{chess_username}",
+					value=f"Score: **{score}**",
+					inline=False
+				)
+			
+			# Add footer
+			embed.set_footer(text=f"Last updated • {datetime.datetime.now().strftime('%Y-%m-%d')}")
+			
+			# Add thumbnail
+			embed.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/5987/5987898.png")
+		
+		elif category_value == "overall":
 			# Process for overall ratings
 			user_ratings = []
 			for user in users:
 				discord_id, chess_username, rapid, blitz, bullet, puzzle = user
-				ratings = [r for r in [rapid, blitz, bullet, puzzle] if r is not None]
+				ratings = [r for r in [rapid, blitz, bullet] if r is not None]
 				avg_rating = sum(ratings) / len(ratings) if ratings else 0
-				user_ratings.append((discord_id, chess_username, rapid, blitz, bullet, puzzle, avg_rating))
+				user_ratings.append((discord_id, chess_username, rapid, blitz, bullet, avg_rating))
 			 
 			# Sort by average rating
-			user_ratings.sort(key=lambda x: x[6], reverse=True)
+			user_ratings.sort(key=lambda x: x[5], reverse=True)
 			 
 			# Create embed
 			embed = discord.Embed(
@@ -76,17 +107,26 @@ def register_commands(bot):
 				color=0x00BFFF,
 				timestamp=datetime.datetime.now()
 			)
-			 
+			
+			# Add trophy emoji for top 3
+			trophies = ["🏆", "🥈", "🥉"]
+
 			for index, user in enumerate(user_ratings, start=1):
-				discord_id, chess_username, rapid, blitz, bullet, puzzle, avg_rating = user
+				discord_id, chess_username, rapid, blitz, bullet, avg_rating = user
 				 
+				# Add trophy emoji for top 3
+				prefix = f"{trophies[index-1]} " if index <= 3 else f"{index}. "
+
 				embed.add_field(
-					name=f"{index}. {chess_username}",
+					name=f"{prefix}. {chess_username}",
 					value=f"Average: **{int(avg_rating)}**\n"
 					  	f"Rapid: {rapid or 'N/A'} | Blitz: {blitz or 'N/A'} | "
-					  	f"Bullet: {bullet or 'N/A'} | Puzzle: {puzzle or 'N/A'}",
+					  	f"Bullet: {bullet or 'N/A'}",
 					inline=False
 				)
+
+			# Add thumbnail
+			embed.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/5987/5987898.png")
 		else:
 			# Process for specific category
 			# Filter out None values and sort
@@ -99,15 +139,23 @@ def register_commands(bot):
 				color=0x00BFFF,
 				timestamp=datetime.datetime.now()
 			)
-			 
+			
+			# Add trophy emoji for top 3
+			trophies = ["🏆", "🥈", "🥉"]
+
 			for index, user in enumerate(filtered_users, start=1):
 				discord_id, chess_username, rating = user
+
+				# Add trophy emoji for top 3
+				prefix = f"{trophies[index-1]} " if index <= 3 else f"{index}. "
+				
 				embed.add_field(
 					name=f"{index}. {chess_username}",
 					value=f"Rating: **{rating}**",
 					inline=False
 				)
-		 
+		 	# Add thumbnail
+			embed.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/5987/5987898.png")
 		# Add footer
 		embed.set_footer(text=f"Last updated • {datetime.datetime.now().strftime('%Y-%m-%d')}")
 		 
