@@ -75,13 +75,13 @@ def register_commands(bot):
 				
 				# Add trophy emoji for top 3
 				prefix = f"{trophies[index-1]} " if index <= 3 else f"{index}. "
-				
+				if index == 26:
+					break
 				embed.add_field(
 					name=f"{prefix}{chess_username}",
 					value=f"Score: **{score}**",
 					inline=False
 				)
-			
 			# Add footer
 			embed.set_footer(text=f"Last updated • {datetime.datetime.now().strftime('%Y-%m-%d')}")
 			
@@ -116,7 +116,8 @@ def register_commands(bot):
 				 
 				# Add trophy emoji for top 3
 				prefix = f"{trophies[index-1]} " if index <= 3 else f"{index}. "
-
+				if index == 26:
+					break
 				embed.add_field(
 					name=f"{prefix}. {chess_username}",
 					value=f"Average: **{int(avg_rating)}**\n"
@@ -148,7 +149,8 @@ def register_commands(bot):
 
 				# Add trophy emoji for top 3
 				prefix = f"{trophies[index-1]} " if index <= 3 else f"{index}. "
-				
+				if index == 26:
+					break
 				embed.add_field(
 					name=f"{index}. {chess_username}",
 					value=f"Rating: **{rating}**",
