@@ -37,9 +37,9 @@ def register_commands(bot):
 
 	@bot.tree.command(name="admin_register", description="Register a Chess.com username")
 	@app_commands.describe(username="Your Chess.com username")
-	async def admin_register(interaction: discord.Interaction, username: str,discord_id: int):
+	async def admin_register(interaction: discord.Interaction, username: str,discord_id: str):
 		await interaction.response.defer(ephemeral=True)
-		if interaction.user.id != 896650341561548801:
+		if interaction.user.id != "896650341561548801":
 			interaction.followup.send(f"Only admins are allowed to execute this command",ephemeral=True)
 		# Check if username exists on Chess.com
 		chess_data = await fetch_chess_data(username)
@@ -61,7 +61,7 @@ def register_commands(bot):
 
 	@bot.tree.command(name="admin_unregister", description="Remove yourself from the Chess.com leaderboard")
 	async def admin_unregister(interaction: discord.Interaction, username: str):
-		if interaction.user.id != 896650341561548801:
+		if interaction.user.id != "896650341561548801":
 			interaction.followup.send(f"Only admins are allowed to execute this command",ephemeral=True)
 		if unregister_user_chess_com(username):
 			await interaction.response.send_message("You have been removed from the Chess.com leaderboard.", ephemeral=True)
