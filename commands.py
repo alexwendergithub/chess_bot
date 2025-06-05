@@ -3,7 +3,7 @@ import discord
 from discord import app_commands
 import datetime
 import logging
-from database import (register_user, unregister_user, store_user_ratings,
+from database import (register_user, unregister_user,unregister_user_chess_com, store_user_ratings,
 				 	get_user_profile, get_leaderboard_data)
 from chess_api import fetch_chess_data, calculate_average_rating
 
@@ -61,6 +61,8 @@ def register_commands(bot):
 
 	@bot.tree.command(name="admin_unregister", description="Remove yourself from the Chess.com leaderboard")
 	async def admin_unregister(interaction: discord.Interaction, username: str):
+		if interaction.user.id != 896650341561548801:
+			interaction.followup.send(f"Only admins are allowed to execute this command",ephemeral=True)
 		if unregister_user_chess_com(username):
 			await interaction.response.send_message("You have been removed from the Chess.com leaderboard.", ephemeral=True)
 		else:
