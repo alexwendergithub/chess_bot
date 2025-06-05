@@ -34,7 +34,38 @@ def register_commands(bot):
 				await interaction.followup.send(f"Successfully registered with Chess.com username {username}!", ephemeral=True)
 		else:
 			await interaction.followup.send("Registration successful but there was an error storing your ratings. Please try refreshing later.", ephemeral=True)
-	
+
+	@bot.tree.command(name="admin_register", description="Register a Chess.com username")
+	@app_commands.describe(username="Your Chess.com username")
+	async def admin_register(interaction: discord.Interaction, username: str,discord_id: int):
+		await interaction.response.defer(ephemeral=True)
+		if interaction.user.id != 896650341561548801:
+			interaction.followup.send(f"Only admins are allowed to execute this command",ephemeral=True)
+		# Check if username exists on Chess.com
+		chess_data = await fetch_chess_data(username)
+		if not chess_data:
+			await interaction.followup.send(f"Could not find Chess.com user '{username}'. Please check the spelling.", ephemeral=True)
+			return
+		 
+		# Register user
+		result = register_user(discord_id, username)
+		 
+		# Store ratings
+		if store_user_ratings(discord_id, chess_data):
+			if result == "updated":
+				await interaction.followup.send(f"Updated Chess.com username to {username}!", ephemeral=True)
+			else:
+				await interaction.followup.send(f"Successfully registered Chess.com username {username}!", ephemeral=True)
+		else:
+			await interaction.followup.send("Registration successful but there was an error storing ratings. Please try refreshing later.", ephemeral=True)
+
+	@bot.tree.command(name="admin_unregister", description="Remove yourself from the Chess.com leaderboard")
+	async def admin_unregister(interaction: discord.Interaction, username: str):
+		if unregister_user_chess_com(username):
+			await interaction.response.send_message("You have been removed from the Chess.com leaderboard.", ephemeral=True)
+		else:
+			await interaction.response.send_message("You are not registered in the leaderboard.", ephemeral=True)
+
 	@bot.tree.command(name="unregister", description="Remove yourself from the Chess.com leaderboard")
 	async def unregister(interaction: discord.Interaction):
 		if unregister_user(interaction.user.id):

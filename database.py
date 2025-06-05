@@ -75,6 +75,27 @@ def register_user(discord_id, chess_username):
 	conn.close()
 	return result
 
+def unregister_user_chess_com(chess_user):
+	"""Remove a user from the system"""
+	conn = get_connection()
+	cursor = conn.cursor()
+	
+	# Check if user exists
+	cursor.execute("SELECT discord_id FROM users WHERE chess_username = ?", (chess_user,))
+	existing_user = cursor.fetchone()
+	
+	if not existing_user:
+		conn.close()
+		return False
+	discord_id = existing_user[0]
+	# Delete user data
+	cursor.execute("DELETE FROM ratings WHERE discord_id = ?", (discord_id,))
+	cursor.execute("DELETE FROM users WHERE discord_id = ?", (discord_id,))
+	
+	conn.commit()
+	conn.close()
+	return True
+
 def unregister_user(discord_id):
 	"""Remove a user from the system"""
 	conn = get_connection()
