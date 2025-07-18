@@ -3,11 +3,14 @@ from typing import Callable, Optional
 
 
 class Pagination(discord.ui.View):
-    def __init__(self, interaction: discord.Interaction, get_page: Callable):
+    def __init__(self, interaction: discord.Interaction, get_page: Callable,users,category_value=None):
         self.interaction = interaction
         self.get_page = get_page
+        self.users = users
         self.total_pages: Optional[int] = None
         self.index = 1
+        self.msg = None
+        self.category_value = category_value
         super().__init__(timeout=100)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -22,17 +25,23 @@ class Pagination(discord.ui.View):
             return False
 
     async def navegate(self):
-        emb, self.total_pages = await self.get_page(self.index)
+        if self.category_value != None:
+            emb, self.total_pages = await self.get_page(self.index,self.users,self.category_value)
+        else:
+            emb, self.total_pages = await self.get_page(self.index,self.users)
         if self.total_pages == 1:
-            await self.interaction.response.send_message(embed=emb)
+            self.msg = await self.interaction.followup.send(embed=emb)
         elif self.total_pages > 1:
             self.update_buttons()
-            await self.interaction.response.send_message(embed=emb, view=self)
+            self.msg = await self.interaction.followup.send(embed=emb, view=self)
 
     async def edit_page(self, interaction: discord.Interaction):
-        emb, self.total_pages = await self.get_page(self.index)
+        if self.category_value != None:
+            emb, self.total_pages = await self.get_page(self.index,self.users,self.category_value)
+        else:
+            emb, self.total_pages = await self.get_page(self.index,self.users)
         self.update_buttons()
-        await interaction.response.edit_message(embed=emb, view=self)
+        await self.msg.edit(embed=emb, view=self)
 
     def update_buttons(self):
         if self.index > self.total_pages // 2:

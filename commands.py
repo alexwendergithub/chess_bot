@@ -6,6 +6,7 @@ import logging
 from database import (register_user, unregister_user,unregister_user_chess_com, store_user_ratings,
 				 	get_user_profile, get_leaderboard_data)
 from chess_api import fetch_chess_data, calculate_average_rating
+from pagination import Pagination
 
 logger = logging.getLogger('chess_bot.commands')
 
@@ -90,37 +91,35 @@ def register_commands(bot):
 		 
 		category_value = category.value
 		users = get_leaderboard_data(category_value)
+		# Add trophy emoji for top 3
+		trophies = ["🏆", "🥈", "🥉"]
+		
 		if category_value == "puzzle_rush":
 
-			# Create embed
-			embed = discord.Embed(
-				title="Chess.com Puzzle Rush Leaderboard",
-				description="Top puzzle rush survival scores",
-				color=0x00BFFF,
-				timestamp=datetime.datetime.now()
-			)
-			
-			# Add trophy emoji for top 3
-			trophies = ["🏆", "🥈", "🥉"]
-			
-			for index, user in enumerate(users, start=1):
-				discord_id, chess_username, score = user
-				
-				# Add trophy emoji for top 3
-				prefix = f"{trophies[index-1]} " if index <= 3 else f"{index}. "
-				if index == 26:
-					break
-				embed.add_field(
-					name=f"{prefix}{chess_username}",
-					value=f"Score: **{score}**",
-					inline=False
+			async def get_page(page: int,users):
+				# Create embed
+				emb = discord.Embed(
+					title="Chess.com Puzzle Rush Leaderboard",
+					description="Top puzzle rush survival scores",
+					color=0x00BFFF,
+					timestamp=datetime.datetime.now()
 				)
-			# Add footer
-			embed.set_footer(text=f"Last updated • {datetime.datetime.now().strftime('%Y-%m-%d')}")
+				users = list(enumerate(users, start=1))
+				offset = (page-1) * 25
+				for index, user in users[offset:offset+25]:
+					print(index)
+					discord_id, chess_username, score = user
+					n = Pagination.compute_total_pages(len(users), 25)
+					emb.add_field(
+						name=f"{index}{chess_username}",
+						value=f"Score: **{score}**",
+						inline=False
+					)
+				emb.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/5987/5987898.png")
+				return emb, n
 			
-			# Add thumbnail
-			embed.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/5987/5987898.png")
-		
+			await Pagination(interaction, get_page,users).navegate()
+
 		elif category_value == "overall":
 			# Process for overall ratings
 			user_ratings = []
@@ -132,70 +131,63 @@ def register_commands(bot):
 			 
 			# Sort by average rating
 			user_ratings.sort(key=lambda x: x[5], reverse=True)
-			 
-			# Create embed
-			embed = discord.Embed(
-				title="Overall Chess.com Ratings Leaderboard",
-				description="Average of all available ratings",
-				color=0x00BFFF,
-				timestamp=datetime.datetime.now()
-			)
-			
-			# Add trophy emoji for top 3
-			trophies = ["🏆", "🥈", "🥉"]
 
-			for index, user in enumerate(user_ratings, start=1):
-				discord_id, chess_username, rapid, blitz, bullet, avg_rating = user
-				 
-				# Add trophy emoji for top 3
-				prefix = f"{trophies[index-1]} " if index <= 3 else f"{index}. "
-				if index == 26:
-					break
-				embed.add_field(
-					name=f"{prefix}. {chess_username}",
-					value=f"Average: **{int(avg_rating)}**\n"
-					  	f"Rapid: {rapid or 'N/A'} | Blitz: {blitz or 'N/A'} | "
-					  	f"Bullet: {bullet or 'N/A'}",
-					inline=False
+			async def get_page(page: int,users):
+				# Create embed
+				emb = discord.Embed(
+					title="Chess.com Overall Leaderboard",
+					description="Top Overall scores",
+					color=0x00BFFF,
+					timestamp=datetime.datetime.now()
 				)
-
-			# Add thumbnail
-			embed.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/5987/5987898.png")
+				users = list(enumerate(users, start=1))
+				print(users)
+				offset = (page-1) * 25
+				for index, user in users[offset:offset+25]:
+					discord_id, chess_username, rapid, blitz, bullet, avg_rating = user
+					print(index)
+					n = Pagination.compute_total_pages(len(users), 25)
+					emb.add_field(
+						name=f"{index}. {chess_username}",
+						value=f"Average: **{int(avg_rating)}**\n"
+							f"Rapid: {rapid or 'N/A'} | Blitz: {blitz or 'N/A'} | "
+							f"Bullet: {bullet or 'N/A'}",
+						inline=False
+					)
+				emb.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/5987/5987898.png")
+				return emb, n
+			
+			await Pagination(interaction, get_page,user_ratings).navegate()
+			 
 		else:
 			# Process for specific category
 			# Filter out None values and sort
 			filtered_users = [(u[0], u[1], u[2]) for u in users if u[2] is not None]
 			filtered_users.sort(key=lambda x: x[2], reverse=True)
-			 
-			# Create embed
-			embed = discord.Embed(
-				title=f"Chess.com {category_value.capitalize()} Ratings Leaderboard",
-				color=0x00BFFF,
-				timestamp=datetime.datetime.now()
-			)
-			
-			# Add trophy emoji for top 3
-			trophies = ["🏆", "🥈", "🥉"]
 
-			for index, user in enumerate(filtered_users, start=1):
-				discord_id, chess_username, rating = user
-
-				# Add trophy emoji for top 3
-				prefix = f"{trophies[index-1]} " if index <= 3 else f"{index}. "
-				if index == 26:
-					break
-				embed.add_field(
-					name=f"{index}. {chess_username}",
-					value=f"Rating: **{rating}**",
-					inline=False
+			async def get_page(page: int,users,category_value):
+				# Create embed
+				emb = discord.Embed(
+					title=f"Chess.com {category_value.capitalize()} Ratings Leaderboard",
+					description=f"Top {category_value.capitalize()} scores",
+					color=0x00BFFF,
+					timestamp=datetime.datetime.now()
 				)
-		 	# Add thumbnail
-			embed.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/5987/5987898.png")
-		# Add footer
-		embed.set_footer(text=f"Last updated • {datetime.datetime.now().strftime('%Y-%m-%d')}")
-		 
-		await interaction.followup.send(embed=embed)
-	
+				users = list(enumerate(users, start=1))
+				offset = (page-1) * 25
+				for index, user in users[offset:offset+25]:
+					discord_id, chess_username, rating = user
+					n = Pagination.compute_total_pages(len(users), 25)
+					emb.add_field(
+						name=f"{index}. {chess_username}",
+						value=f"Rating: **{rating}**",
+						inline=False
+					)
+				emb.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/5987/5987898.png")
+				return emb, n
+
+			await Pagination(interaction, get_page,filtered_users,category_value).navegate()
+
 	@bot.tree.command(name="profile", description="Show Chess.com profile details for a user")
 	@app_commands.describe(user="Discord user to show profile for (leave empty for your own profile)")
 	async def profile(interaction: discord.Interaction, user: discord.User = None):
