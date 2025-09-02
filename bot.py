@@ -15,9 +15,7 @@ logger = logging.getLogger('chess_bot')
 def setup_bot():
 	"""Initialize and configure the bot"""
 	# Set up intents
-	intents = discord.Intents.default()
-	intents.message_content = True
-
+	intents = discord.Intents.all()
 	GUILD = discord.Object(id=token_bot.MY_GUILD)
 	class MyClient(discord.Client):
 		def __init__(self, *, intents: discord.Intents):
